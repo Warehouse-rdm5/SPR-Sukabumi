@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>WMS Bin Checker DC Sukabumi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+      html, body { max-width: 100vw; overflow-x: hidden; }
+      body { background-color: #f0f2f5; font-family: 'Plus Jakarta Sans', sans-serif; color: #333; padding-bottom: 30px; touch-action: manipulation; }
+      
+      /* STYLING MODE SELECTION */
+      #modeSelectionScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e2e8f0; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+      .mode-card { background: white; padding: 30px 20px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border-top: 8px solid #d32f2f; }
+      .btn-mode { padding: 18px; font-size: 1.15rem; font-weight: 800; border-radius: 14px; width: 100%; border: none; transition: transform 0.2s; }
+      .btn-mode:active { transform: scale(0.96); }
+      .btn-spr { background-color: #d32f2f; color: white; box-shadow: 0 6px 15px rgba(211, 47, 47, 0.3); margin-bottom: 15px; }
+      .btn-eceran { background-color: #1e293b; color: white; box-shadow: 0 6px 15px rgba(30, 41, 59, 0.3); }
+
+      .header-wings { background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: white; padding: 20px 15px; text-align: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(183, 28, 28, 0.2); margin-bottom: 25px;}
+      .card-main { border: none; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 20px;}
+      .btn-scan { border-radius: 12px; font-weight: 700; padding: 14px; font-size: 1.1rem; background-color: #d32f2f; color: white; border: none; box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3); width: 100%;}
+      .btn-camera { background-color: #2c3e50; color: white; border-radius: 0 10px 10px 0; border: none; padding: 0 20px; font-weight: 600;}
+      .form-control-lg { border-radius: 10px 0 0 10px; font-size: 1.05rem; border: 1px solid #ced4da;}
+      .task-card { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-top: 20px; text-align: center;}
+      .task-num { font-size: 1.3rem; font-weight: 800; line-height: 1; margin-top: 5px;}
+      .analytic-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.8rem; }
+      .analytic-row:last-child { border-bottom: none; }
+      .analytic-badge { font-weight: 700; font-size: 0.85rem; padding: 2px 10px; border-radius: 20px; }
+      #reader { width: 100%; border-radius: 12px; overflow: hidden; }
+      .custom-radio-group { display: flex; gap: 8px; margin-top: 15px; }
+      .custom-radio-btn { display: none; }
+      .custom-radio-label { flex: 1; text-align: center; padding: 12px 5px; border-radius: 10px; border: 2px solid #cbd5e1; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease-in-out; color: #475569; background-color: #f8fafc; }
+      .custom-radio-btn:checked + .label-match { background-color: #22c55e; border-color: #22c55e; color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
+      .custom-radio-btn:checked + .label-notmatch { background-color: #ef4444; border-color: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+      .custom-radio-btn:checked + .label-empty { background-color: #f59e0b; border-color: #f59e0b; color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+
+      /* Styling khusus untuk tombol alternatif jepret foto */
+      #reader button { padding: 10px 20px; background-color: #d32f2f; color: white; border: none; border-radius: 8px; font-weight: bold; margin: 10px 5px; cursor: pointer; }
+      #reader a { color: #d32f2f; font-weight: bold; text-decoration: none; margin-top: 10px; display: inline-block; }
+    </style>
+  </head>
+  <body>
+    
+    <div id="modeSelectionScreen">
+      <div class="mode-card">
+        <h2 class="fw-bold mb-1" style="color: #1e293b;">Area Audit</h2>
+        <p class="text-muted mb-4" style="font-size: 0.9rem; font-weight: 600;">DC Sukabumi</p>
+        <button class="btn-mode btn-spr" onclick="selectMode('SPR')">📦 Check Bin SPR</button>
+        <button class="btn-mode btn-eceran" onclick="selectMode('ECERAN')">🛒 Check Bin ECERAN</button>
+      </div>
+    </div>
+
+    <div id="mainAppContent" style="display: none;">
+      <div class="header-wings" id="dynamicHeader">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h3 class="m-0 fw-bold text-start" id="headerTitle">📦 WMS Bin Checker DC Sukabumi</h3>
+            <small style="opacity: 0.85;" class="text-start d-block">Live Scanner DC</small>
+          </div>
+          <div>
+            <button type="button" class="btn btn-sm btn-warning fw-bold text-dark me-1" onclick="backToMenu()" style="border-radius: 20px; padding: 5px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🏠 Menu</button>
+            <button type="button" class="btn btn-sm btn-light fw-bold text-dark" onclick="fetchInitialData()" style="border-radius: 20px; padding: 5px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔄 Refresh</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="container pb-4">
+        <div class="card card-main">
+          <form id="scanForm" onsubmit="handleFormSubmit(event)">
+            <datalist id="binList"></datalist>
+            <div class="mb-4">
+              <label class="form-label fw-bold text-secondary text-uppercase mb-2">🔍 Scan Storage Bin</label>
+              <div class="input-group input-group-lg">
+                <input type="text" class="form-control" id="binCode" list="binList" placeholder="Contoh: AB-02-04" required autocomplete="off">
+                <button class="btn btn-camera" type="button" onclick="openScanner()">📷 Scan Live</button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-scan" id="btnSubmit">🔍 Cek Bin Ini</button>
+          </form>
+        </div>
+
+        <div class="task-card" id="pickSlotPanel">
+          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres Bin Pick Slot</h6>
+          <div class="row text-center mb-4">
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Target</small><div class="task-num text-primary" style="font-size:1.05rem;" id="psTotal">-</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Selesai</small><div class="task-num text-success" style="font-size:1.05rem;" id="psDone">-</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sesuai%</small><div class="task-num text-danger" style="font-size:1.05rem;" id="psPctMatch">-%</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Kosong</small><div class="task-num text-warning text-dark" style="font-size:1.05rem;" id="psKosong">-</div></div>
+            <div class="col px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Blm Val</small><div class="task-num text-secondary" style="font-size:1.05rem;" id="psPctBelum">-%</div></div>
+          </div>
+
+          <div class="mt-2 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">⚠️</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b45309; text-transform: uppercase;">Daftar Belum Validasi</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableBelum"></tbody></table>
+             </div>
+          </div>
+          <div class="mt-4 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">❌</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b91c1c; text-transform: uppercase;">Daftar Not Match</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableNotMatch"></tbody></table>
+             </div>
+          </div>
+          <div class="mt-4 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">📭</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #d97706; text-transform: uppercase;">Daftar Item Kosong</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableKosong"></tbody></table>
+             </div>
+          </div>
+        </div>
+
+        <div class="task-card" id="reverseBinPanel">
+          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres Reverse Bin</h6>
+          <div class="row text-center mb-4">
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Target</small><div class="task-num text-primary" style="font-size:1.05rem;" id="rbTotal">-</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Selesai</small><div class="task-num text-success" style="font-size:1.05rem;" id="rbDone">-</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sesuai%</small><div class="task-num text-danger" style="font-size:1.05rem;" id="rbPctMatch">-%</div></div>
+            <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Kosong</small><div class="task-num text-warning text-dark" style="font-size:1.05rem;" id="rbKosong">-</div></div>
+            <div class="col px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Blm Val</small><div class="task-num text-secondary" style="font-size:1.05rem;" id="rbPctBelum">-%</div></div>
+          </div>
+
+          <div class="mt-2 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">⚠️</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b45309; text-transform: uppercase;">Daftar Belum Validasi</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="rbTableBelum"></tbody></table>
+             </div>
+          </div>
+          <div class="mt-4 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">❌</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b91c1c; text-transform: uppercase;">Daftar Not Match</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="rbTableNotMatch"></tbody></table>
+             </div>
+          </div>
+          <div class="mt-4 text-start">
+             <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">📭</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #d97706; text-transform: uppercase;">Daftar Item Kosong</h6></div>
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="rbTableKosong"></tbody></table>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="scannerOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:99999; flex-direction:column; padding:20px; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h5 style="color:white; margin:0; font-weight:bold;">Arahkan ke Barcode</h5>
+        <button type="button" class="btn btn-danger fw-bold" onclick="stopScanner()">✖ Tutup</button>
+      </div>
+      <div id="reader" style="width:100%; background:white; border-radius:12px; padding:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"></div>
+    </div>
+
+    <script>
+      const API_URL = "https://script.google.com/macros/s/AKfycbztAejE1_7Ktj4rW1QRzsm4leIfRJRWd7tB7hk0NIhi7V8krITmK7ZcQa_PjzfmevJk/exec"; 
+      let html5QrCode, scanModal, masterDataMids = {};
+      let appMode = 'SPR'; // Default Mode
+
+      document.addEventListener("DOMContentLoaded", function() {
+      });
+
+      function selectMode(mode) {
+        appMode = mode;
+        document.getElementById('modeSelectionScreen').style.display = 'none';
+        document.getElementById('mainAppContent').style.display = 'block';
+
+        const headerTitle = document.getElementById('headerTitle');
+        const headerBg = document.getElementById('dynamicHeader');
+        
+        // Elemen yang akan kita manipulasi
+        const binInput = document.getElementById('binCode');
+        const reversePanel = document.getElementById('reverseBinPanel');
+        
+        if (mode === 'ECERAN') {
+           headerTitle.innerText = '🛒 WMS Bin Eceran';
+           headerBg.style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+           
+           // 1. Ubah contoh teks pencarian untuk Eceran
+           binInput.placeholder = 'Contoh: RA-01-01-01';
+           
+           // 2. Sembunyikan panel Reverse Bin untuk Eceran
+           if(reversePanel) reversePanel.style.display = 'none'; 
+           
+        } else {
+           headerTitle.innerText = '📦 WMS Bin SPR';
+           headerBg.style.background = 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)';
+           
+           // 1. Ubah contoh teks pencarian untuk SPR
+           binInput.placeholder = 'Contoh: AB-02-04';
+           
+           // 2. Tampilkan kembali panel Reverse Bin untuk SPR
+           if(reversePanel) reversePanel.style.display = 'block'; 
+        }
+        
+        fetchInitialData();
+      }
+
+      async function sendRequest(payload) {
+        payload.mode = appMode; 
+        const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+        return await res.json();
+      }
+
+      async function fetchInitialData() {
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true; btn.innerHTML = '⏳ Menarik Data ' + appMode + '...';
+        try {
+          const data = await sendRequest({ action: 'init' });
+          if(data.status === 'success') {
+            const binList = document.getElementById('binList'); binList.innerHTML = '';
+            data.bins.forEach(b => { let opt = document.createElement('option'); opt.value = b; binList.appendChild(opt); });
+            updateTaskBoard(data);
+            masterDataMids = data.masterMids || {}; 
+            btn.disabled = false; btn.innerHTML = '🔍 Cek Bin Ini';
+          } else {
+            Swal.fire('Error Database', data.message || 'Gagal terhubung ke Google Sheet.', 'error');
+            btn.disabled = false; btn.innerHTML = '⚠️ Coba Lagi';
+          }
+        } catch (e) { 
+            Swal.fire('Offline', 'Koneksi internet bermasalah.', 'warning');
+            btn.disabled = false; btn.innerHTML = '🔍 Cek Bin Ini (Offline)'; 
+        }
+      }
+
+      function updateTaskBoard(data) {
+        if (!data.pickSlot) return; 
+
+        document.getElementById('psTotal').innerText = data.pickSlot.target; document.getElementById('psDone').innerText = data.pickSlot.match;
+        document.getElementById('psPctMatch').innerText = data.pickSlot.pctMatch + '%'; document.getElementById('psPctBelum').innerText = data.pickSlot.pctBelum + '%';
+        document.getElementById('psKosong').innerText = data.pickSlot.kosong; 
+
+        let psBelumHTML = ''; data.pickSlot.listBelum.forEach(x => { psBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
+        document.getElementById('psTableBelum').innerHTML = psBelumHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Semua sudah divalidasi</td></tr>';
+
+        let psNotMatchHTML = ''; data.pickSlot.listNotMatch.forEach(x => { psNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
+        document.getElementById('psTableNotMatch').innerHTML = psNotMatchHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Tidak ada Not Match</td></tr>';
+
+        let psKosongHTML = ''; data.pickSlot.listEmpty.forEach(x => { psKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
+        document.getElementById('psTableKosong').innerHTML = psKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
+
+        document.getElementById('rbTotal').innerText = data.reverseBin.target; document.getElementById('rbDone').innerText = data.reverseBin.match;
+        document.getElementById('rbPctMatch').innerText = data.reverseBin.pctMatch + '%'; document.getElementById('rbPctBelum').innerText = data.reverseBin.pctBelum + '%';
+        document.getElementById('rbKosong').innerText = data.reverseBin.kosong; 
+
+        let rbBelumHTML = ''; data.reverseBin.listBelum.forEach(x => { rbBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
+        document.getElementById('rbTableBelum').innerHTML = rbBelumHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Semua sudah divalidasi</td></tr>';
+
+        let rbNotMatchHTML = ''; data.reverseBin.listNotMatch.forEach(x => { rbNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
+        document.getElementById('rbTableNotMatch').innerHTML = rbNotMatchHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Tidak ada Not Match</td></tr>';
+
+        let rbKosongHTML = ''; data.reverseBin.listEmpty.forEach(x => { rbKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
+        document.getElementById('rbTableKosong').innerHTML = rbKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
+
+        if (document.getElementById('lblTotalBinMat')) {
+          document.getElementById('lblTotalBinMat').innerText = data.totalBinMat + " baris"; document.getElementById('lblBinMat0102InStock').innerText = data.binMat0102InStock + " items";
+          document.getElementById('lblBinMat0102NotInStock').innerText = data.binMat0102NotInStock + " items"; document.getElementById('lblStock0102NotInBinMat').innerText = data.stock0102NotInBinMat + " items";
+        }
+      }
+
+      // ==========================================================
+      // FITUR SCANNER FINAL (DILENGKAPI TOMBOL JEPRET FOTO ALTERNATIF)
+      // ==========================================================
+      let html5QrcodeScanner; // Gunakan variabel versi Scanner UI
+
+      function openScanner() {
+        // 1. Tampilkan layar hitam overlay
+        document.getElementById('scannerOverlay').style.display = 'flex';
+
+        // 2. Gunakan Html5QrcodeScanner (Versi UI Lengkap)
+        html5QrcodeScanner = new Html5QrcodeScanner(
+          "reader",
+          { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true },
+          false // verbose = false
+        );
+
+        // 3. Render scanner ke layar
+        html5QrcodeScanner.render(onScanSuccess, function(errorMessage) {
+            // Biarkan kosong agar console tidak dipenuhi error pencarian frame
+        });
+      }
+
+      function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('binCode').value = decodedText;
+        try { new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3').play().catch(()=>{}); } catch(e){}
+        stopScanner();
+        handleFormSubmit(null);
+      }
+
+      function stopScanner() {
+        document.getElementById('scannerOverlay').style.display = 'none';
+        if (html5QrcodeScanner) {
+          html5QrcodeScanner.clear().catch(e => console.log("Gagal mematikan scanner", e));
+        }
+      }
+
+      async function handleFormSubmit(e) {
+        if(e) e.preventDefault(); document.activeElement.blur();
+        const binVal = document.getElementById('binCode').value.trim(); if(!binVal) return;
+        const btn = document.getElementById('btnSubmit'); btn.innerHTML = '⏳ Memeriksa...'; btn.disabled = true;
+
+        try {
+          const response = await sendRequest({ action: 'checkBin', bin: binVal });
+
+          if (response.status === 'already_scanned') {
+             function createScannedCard(item, color, icon) { return `<div style="border-left: 6px solid ${color}; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);"><div style="display: flex; gap: 10px;"><div style="font-size: 1.2rem;">${icon}</div><div><div style="font-weight: 800; color: #1e293b; font-size: 1.05rem; line-height: 1.3; margin-bottom: 4px;">${item.name}</div><div style="color: #64748b; font-size: 0.85rem;">Deskripsi: <b style="color: #0f172a; font-size: 0.95rem;">${item.mid}</b></div>${item.remark ? `<div style="color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin-top: 5px; background: #fef2f2; padding: 4px 8px; border-radius: 4px; display: inline-block;">Ket: ${item.remark}</div>` : ''}</div></div></div>`; }
+             let htmlSummary = `<div style="text-align:left; max-height: 50vh; overflow-y: auto; padding-right: 5px;">`;
+             if(response.summary.unaudited && response.summary.unaudited.length > 0) { htmlSummary += `<div style="font-weight: 900; color: #475569; font-size: 0.85rem; margin-bottom: 8px; margin-top: 5px;">⏳ BELUM DIAUDIT</div>`; response.summary.unaudited.forEach(item => htmlSummary += createScannedCard(item, '#94a3b8', '⏳')); }
+             if(response.summary.match.length > 0) { htmlSummary += `<div style="font-weight: 900; color: #15803d; font-size: 0.85rem; margin-bottom: 8px; margin-top: 15px;">✅ PRODUK MATCH</div>`; response.summary.match.forEach(item => htmlSummary += createScannedCard(item, '#22c55e', '👍')); }
+             if(response.summary.notmatch.length > 0) { htmlSummary += `<div style="font-weight: 900; color: #b91c1c; font-size: 0.85rem; margin-bottom: 8px; margin-top: 15px;">❌ PRODUK NOT MATCH</div>`; response.summary.notmatch.forEach(item => htmlSummary += createScannedCard(item, '#ef4444', '⚠️')); }
+             if(response.summary.empty.length > 0) { htmlSummary += `<div style="font-weight: 900; color: #b45309; font-size: 0.85rem; margin-bottom: 8px; margin-top: 15px;">📭 ITEM KOSONG</div>`; response.summary.empty.forEach(item => htmlSummary += createScannedCard(item, '#eab308', '👻')); }
+             htmlSummary += `</div>`;
+             
+             Swal.fire({ title: `<span style="font-weight: 900;">Bin <b style="color: #b71c1c;">${response.bin}</b><br>Sudah Diaudit!</span>`, html: htmlSummary, showCancelButton: true, showConfirmButton: true, confirmButtonText: '🔄 Update MID Baru', cancelButtonText: 'Tutup', confirmButtonColor: '#3b82f6', cancelButtonColor: '#64748b', reverseButtons: true, width: '95%' 
+             }).then((result) => {
+               if (result.isConfirmed) { setTimeout(() => { showInputMidPopup(response.bin, response.products); }, 350); } else { document.getElementById('binCode').value = ''; }
+             });
+          } 
+          else if (response.status === 'bin_not_found_030405') { showInputMidPopup(response.bin, null); }
+          else if (response.type === 'POPUP_LIST') { showAuditListPopup(binVal, response.products, response.suffix); } 
+          else { Swal.fire('Error!', response.message, 'error'); }
+        } catch (error) { Swal.fire('Error', 'Gagal terhubung ke Database.', 'error'); } 
+        finally { btn.innerHTML = '🔍 Cek Bin Ini'; btn.disabled = false; }
+      }
+
+      function toggleRemark(idx, status, suffix) {
+        const input12 = document.getElementById('remark_'+idx), checkArea345 = document.getElementById('check_area_'+idx);
+        if(status === 'notmatch') {
+            if (['03','04','05'].includes(suffix)) { checkArea345.style.display = 'block'; document.getElementById('verified_'+idx).value = 'false'; } else { input12.style.display = 'block'; input12.focus(); }
+        } else {
+            if (['03','04','05'].includes(suffix)) { checkArea345.style.display = 'none'; document.getElementById('verified_'+idx).value = 'true'; document.getElementById('stock_status_'+idx).innerHTML = ''; } else { input12.style.display = 'none'; input12.value = ''; }
+        }
+      }
+
+      async function verifyStock(bin, idx) {
+         const actualMid = document.getElementById('actual_mid_'+idx).value.trim(), statusLabel = document.getElementById('stock_status_'+idx);
+         if (!actualMid) { statusLabel.innerHTML = '<span class="text-danger fw-bold">⚠ Masukkan Angka Product!</span>'; return; }
+         statusLabel.innerHTML = '<span class="text-warning fw-bold">⏳ Mengecek...</span>';
+         try {
+            const checkRes = await sendRequest({ action: 'checkAvailableStock', bin: bin, mid: actualMid });
+            if(checkRes.status === 'success') { statusLabel.innerHTML = '<span class="text-success fw-bold">✔ ' + checkRes.message + '</span>'; document.getElementById('verified_'+idx).value = 'true'; document.getElementById('remark_'+idx).value = 'Aktual: ' + actualMid; 
+            } else { statusLabel.innerHTML = '<span class="text-danger fw-bold">✖ ' + checkRes.message + '</span>'; document.getElementById('verified_'+idx).value = 'false'; }
+         } catch (e) { statusLabel.innerHTML = '<span class="text-danger fw-bold">✖ Error.</span>'; }
+      }
+
+      function showAuditListPopup(bin, products, suffix) {
+        let htmlContent = '<div style="max-height: 65vh; overflow-y: auto; overflow-x: hidden; text-align: left; padding-right: 5px;">';
+        products.forEach((p, idx) => {
+           let mCheck = '', nmCheck = '', eCheck = '', badgeHTML = '';
+           if (p.status === 'match') { mCheck = 'checked'; badgeHTML = `<span style="background:#22c55e; color:white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">✅ Sudah Teraudit</span>`; }
+           else if (p.status === 'notmatch') { nmCheck = 'checked'; badgeHTML = `<span style="background:#ef4444; color:white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">❌ Sudah Teraudit</span>`; }
+           else if (p.status === 'empty') { eCheck = 'checked'; badgeHTML = `<span style="background:#f59e0b; color:white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">📭 Sudah Teraudit</span>`; }
+           else { mCheck = 'checked'; }
+
+           let remarkValue = p.remark && p.remark !== 'ITEM KOSONG' ? p.remark : '';
+           let remarkDisplay = nmCheck === 'checked' ? 'block' : 'none';
+
+           htmlContent += `
+             <div style="border: 2px solid #e2e8f0; padding: 16px; margin-bottom: 15px; border-radius: 14px; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+               <div style="margin-bottom: 12px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 12px;">
+                 <div style="display: flex; align-items: center; flex-wrap: wrap;"><div style="background: #eff6ff; color: #1d4ed8; font-size: 1.4rem; font-weight: 900; padding: 6px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #bfdbfe;">🏷️ ${p.product}</div>${badgeHTML}</div>
+                 <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">${p.mid}</div>
+               </div>
+               <div class="custom-radio-group">
+                 <input type="radio" class="custom-radio-btn" name="status_${idx}" id="m_${idx}" value="match" ${mCheck} onchange="toggleRemark(${idx}, 'match', '${suffix}')"><label class="custom-radio-label label-match" for="m_${idx}">✔ Match</label>
+                 <input type="radio" class="custom-radio-btn" name="status_${idx}" id="nm_${idx}" value="notmatch" ${nmCheck} onchange="toggleRemark(${idx}, 'notmatch', '${suffix}')"><label class="custom-radio-label label-notmatch" for="nm_${idx}">✖ Not Match</label>
+                 <input type="radio" class="custom-radio-btn" name="status_${idx}" id="e_${idx}" value="empty" ${eCheck} onchange="toggleRemark(${idx}, 'empty', '${suffix}')"><label class="custom-radio-label label-empty" for="e_${idx}">📭 Kosong</label>
+               </div>
+               <input type="number" pattern="[0-9]*" inputmode="numeric" id="qty_${idx}" class="form-control form-control-lg mt-3" placeholder="📦 Isi Qty (Opsional)" style="border: 2px solid #cbd5e1; border-radius: 10px; font-weight: 700;">
+               <input type="text" id="remark_${idx}" class="form-control form-control-lg mt-2" value="${remarkValue}" placeholder="✍️ Keterangan wajib..." style="display:${remarkDisplay}; border: 2px solid #ef4444; border-radius: 10px; font-weight: 700; background-color: #fef2f2;">
+               <div id="check_area_${idx}" style="display:none; margin-top: 15px; background: #fffbeb; padding: 15px; border-radius: 12px; border: 2px solid #fde68a;">
+                  <label class="fw-bold mb-2 text-danger" style="font-size:0.85rem;">⚠️ Wajib Cek Aktual Stok</label>
+                  <input type="number" pattern="[0-9]*" inputmode="numeric" id="actual_mid_${idx}" class="form-control form-control-lg mb-2" placeholder="Angka Product..." style="font-weight: 700; border-radius: 10px;">
+                  <button type="button" class="btn btn-warning w-100 fw-bold text-dark" style="border-radius: 10px; padding: 12px; font-size:1rem;" onclick="verifyStock('${bin}', ${idx})">🔍 Cek Available Stock</button>
+                  <input type="hidden" id="verified_${idx}" value="true"><div id="stock_status_${idx}" class="mt-2 text-center" style="font-size: 0.9rem;"></div>
+               </div>
+             </div>`;
+        });
+        
+        if (['01', '02'].includes(suffix) && products.length < 2) {
+           htmlContent += `<button type="button" class="btn btn-outline-primary w-100 mt-3 mb-2 fw-bold" style="border-width: 2px; border-style: dashed; padding: 12px; border-radius: 12px;" onclick="Swal.close(); setTimeout(() => { showAddManualPopup('${bin}'); }, 400);">➕ Tambah Product Fisik ke-2 (Baris Baru)</button>`;
+        }
+        
+        htmlContent += '</div>';
+
+        Swal.fire({ title: `<span style="font-size:1.3rem; font-weight: 900;">Audit Bin <b style="color:#d32f2f; background: #fee2e2; padding: 2px 8px; border-radius: 6px;">${bin}</b></span>`, html: htmlContent, showCancelButton: true, confirmButtonColor: '#d32f2f', confirmButtonText: '💾 SIMPAN AUDIT', cancelButtonText: 'Batal', width: '95%', customClass: { popup: 'rounded-4' },
+          preConfirm: () => {
+            let auditData = [];
+            for(let i=0; i<products.length; i++) {
+              let statusVal = document.getElementById('m_'+i).checked ? 'match' : (document.getElementById('nm_'+i).checked ? 'notmatch' : 'empty');
+              let qtyVal = document.getElementById('qty_'+i) ? document.getElementById('qty_'+i).value.trim() : '';
+              if (['03','04','05'].includes(suffix)) {
+                  let isVerified = document.getElementById('verified_'+i).value === 'true', remarkVal = document.getElementById('remark_'+i) ? document.getElementById('remark_'+i).value : '';
+                  if (statusVal === 'notmatch' && !isVerified) { Swal.showValidationMessage('Pastikan status "Not Match" sudah dicek ke Stok!'); return false; }
+                  auditData.push({ row: products[i].row, product: products[i].product, mid: products[i].mid, status: statusVal, remark: remarkVal, qty: qtyVal });
+              } else {
+                  let remark = document.getElementById('remark_'+i) ? document.getElementById('remark_'+i).value.trim() : '';
+                  if(statusVal === 'notmatch' && remark === '') { Swal.showValidationMessage('Keterangan WAJIB diisi untuk produk Not Match!'); return false; }
+                  auditData.push({ row: products[i].row, product: products[i].product, mid: products[i].mid, status: statusVal, remark: remark, qty: qtyVal });
+              }
+            } return auditData;
+          }
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+             Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+             const saveRes = await sendRequest({ action: 'submitBinAudit', bin: bin, auditData: result.value });
+             if(saveRes.status === 'success') { updateTaskBoard(saveRes.stats); Swal.fire('Tersimpan!', saveRes.message, 'success'); document.getElementById('binCode').value = ''; } else { Swal.fire('Gagal', saveRes.message, 'error'); }
+          }
+        });
+      }
+
+      function showInputMidPopup(bin, products) {
+        const suffix = String(bin).trim().slice(-2);
+        const maxItems = (suffix === '01' || suffix === '02') ? 2 : 1;
+        let htmlContent = '<div style="text-align: left; max-height: 65vh; overflow-y: auto; overflow-x: hidden; padding-right: 5px;">';
+
+        if (products && products.length > 0) {
+          htmlContent += `<div style="font-size:0.9rem; font-weight:800; color:#334155; margin-bottom:12px;">Pilih Status Aktual Fisik:</div>`;
+          products.forEach((p, idx) => {
+            let isMatch = (p.status === 'match' || p.status === null);
+            let isEdit = (p.status === 'notmatch');
+            let isEmpty = (p.status === 'empty');
+            
+            let displayEditPanel = (isEdit || isEmpty) ? 'block' : 'none';
+            let displayInputMid = isEdit ? 'block' : 'none';
+
+            htmlContent += `
+              <div style="border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.04);">
+                <div style="font-weight: 900; color: #1e3a8a; font-size: 1.05rem; margin-bottom: 4px; line-height: 1.3;">🏷️ ${p.product}</div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 12px; font-weight: 600;">MID Saat Ini: <b style="color:#0f172a;">${p.mid}</b></div>
+
+                <div class="d-grid gap-2 mb-2">
+                  <input type="radio" class="btn-check" name="act_${idx}" id="act_match_${idx}" value="match" autocomplete="off" ${isMatch ? 'checked' : ''} onchange="toggleEditPanel(${idx}, 'match')">
+                  <label class="btn btn-outline-success text-start fw-bold" for="act_match_${idx}">✔ Ada Barang / Match</label>
+                  <input type="radio" class="btn-check" name="act_${idx}" id="act_edit_${idx}" value="edit" autocomplete="off" ${isEdit ? 'checked' : ''} onchange="toggleEditPanel(${idx}, 'edit')">
+                  <label class="btn btn-outline-primary text-start fw-bold" for="act_edit_${idx}">✏️ Ganti Kode Product</label>
+                  <input type="radio" class="btn-check" name="act_${idx}" id="act_empty_${idx}" value="empty" autocomplete="off" ${isEmpty ? 'checked' : ''} onchange="toggleEditPanel(${idx}, 'empty')">
+                  <label class="btn btn-outline-warning text-dark text-start fw-bold" for="act_empty_${idx}">📭 Item Kosong</label>
+                </div>
+
+                <div id="edit_panel_${idx}" style="display:${displayEditPanel}; margin-top:15px; background:#f8fafc; padding:12px; border-radius:10px; border:1px dashed #94a3b8;">
+                  <div id="new_mid_container_${idx}" style="display:${displayInputMid};">
+                    <label class="fw-bold text-primary" style="font-size:0.8rem; margin-bottom:5px;">Input MID Fisik Baru:</label>
+                    <input type="number" id="new_mid_${idx}" class="form-control mb-2 form-control-lg" placeholder="Ketik Angka..." oninput="liveLookupCard(${idx})" style="font-weight:700;">
+                    <div id="live_name_${idx}" class="text-success fw-bold mb-2" style="font-size:0.75rem; display:none;"></div>
+                  </div>
+                  <label class="fw-bold text-secondary" style="font-size:0.8rem; margin-bottom:5px;">Qty Fisik (Opsional):</label>
+                  <input type="number" pattern="[0-9]*" inputmode="numeric" id="qty_${idx}" class="form-control form-control-lg" placeholder="📦 Isi Qty..." style="font-weight:700;">
+                </div>
+                <input type="hidden" id="row_${idx}" value="${p.row}">
+              </div>`;
+          });
+        }
+
+        if (!products || products.length < maxItems) {
+          htmlContent += `
+            <div style="border: 2px dashed #3b82f6; padding: 15px; border-radius: 12px; background: #eff6ff; margin-top: 15px;">
+              <div style="font-weight: 900; color: #1d4ed8; font-size: 1rem; margin-bottom: 10px;">➕ Tambah Slot Produk Baru</div>
+              <label class="fw-bold text-primary" style="font-size:0.8rem; margin-bottom:5px;">Input MID Baru:</label>
+              <input type="number" id="add_mid" class="form-control mb-2 form-control-lg" placeholder="Ketik Angka..." oninput="liveLookupAdd()" style="font-weight:700; border-color:#93c5fd;">
+              <div id="add_name" class="text-success fw-bold mb-2" style="font-size:0.75rem; display:none;"></div>
+              <label class="fw-bold text-secondary" style="font-size:0.8rem; margin-bottom:5px;">Qty Fisik (Opsional):</label>
+              <input type="number" pattern="[0-9]*" inputmode="numeric" id="add_qty" class="form-control form-control-lg" placeholder="📦 Isi Qty..." style="font-weight:700; border-color:#93c5fd;">
+            </div>`;
+        }
+        htmlContent += '</div>';
+
+        Swal.fire({ title: `<span style="font-weight: 900; font-size: 1.25rem;">Maintain <b style="color: #d32f2f;">${bin}</b></span>`, html: htmlContent, showCancelButton: true, confirmButtonColor: '#16a34a', cancelButtonColor: '#64748b', confirmButtonText: '💾 Simpan Perubahan', cancelButtonText: 'Batal', width: '95%', customClass: { popup: 'rounded-4' },
+          preConfirm: () => {
+            let updates = [];
+            if (products && products.length > 0) {
+              for(let i=0; i<products.length; i++) {
+                let action = document.querySelector(`input[name="act_${i}"]:checked`).value;
+                let row = document.getElementById(`row_${i}`).value;
+                let newMid = action === 'edit' ? document.getElementById(`new_mid_${i}`).value.trim() : '';
+                let qty = (action === 'edit' || action === 'empty' || action === 'match') ? document.getElementById(`qty_${i}`).value.trim() : '';
+                if (action === 'edit' && !newMid) { Swal.showValidationMessage('⚠️ MID Baru wajib diisi jika pilih Ganti MID!'); return false; }
+                if (action === 'edit' && newMid && !masterDataMids[newMid]) { Swal.showValidationMessage(`⚠️ MID ${newMid} tidak terdaftar!`); return false; }
+                updates.push({ row: row, action: action, newMid: newMid, qty: qty, oldProd: products[i].product, oldMid: products[i].mid });
+              }
+            }
+            let addMid = document.getElementById('add_mid') ? document.getElementById('add_mid').value.trim() : '';
+            let addQty = document.getElementById('add_qty') ? document.getElementById('add_qty').value.trim() : '';
+            let addData = null;
+            if (addMid) {
+               if (!masterDataMids[addMid]) { Swal.showValidationMessage(`⚠️ MID Baru ${addMid} tidak terdaftar!`); return false; }
+               addData = { newMid: addMid, qty: addQty };
+            }
+            return { updates: updates, addData: addData };
+          }
+        }).then(async (result) => {
+           if (result.isConfirmed) {
+              Swal.fire({ title: 'Memproses Data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+              const res = await sendRequest({ action: 'processMaintainBin', bin: bin, maintainData: result.value });
+              if(res.status === 'success') { updateTaskBoard(res.stats); Swal.fire({ icon: 'success', title: 'Berhasil!', html: res.message, confirmButtonColor: '#16a34a' }); document.getElementById('binCode').value = ''; }
+              else { Swal.fire('Gagal', res.message, 'error'); }
+           } else { document.getElementById('binCode').value = ''; }
+        });
+      }
+
+      function showAddManualPopup(bin) {
+        Swal.fire({
+          title: `<span style="font-weight: 900; font-size: 1.25rem;">Tambah Produk ke <b style="color: #d32f2f;">${bin}</b></span>`,
+          html: `
+            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 0.9rem; text-align: left; color: #1e40af; line-height: 1.4;">
+              📍 Masukkan <b>Angka Product (Fisik)</b> ke-2 yang ada di Bin ini. Ini akan menambahkan <b>Baris Baru</b> di Google Sheet.
+            </div>
+            <div style="text-align: left; font-weight: 800; color: #334155; margin-bottom: 8px;">Input Angka Product:</div>
+            <input type="number" pattern="[0-9]*" inputmode="numeric" id="new_mid_input" class="form-control form-control-lg" placeholder="Contoh: 10014" style="font-weight: 800; font-size: 1.2rem; border-radius: 10px; border: 2px solid #cbd5e1; text-align: center;" autocomplete="off" oninput="liveLookupMID()">
+            <div id="live_product_name" style="margin-top: 10px; font-size: 0.95rem; font-weight: 700; color: #1e3a8a; min-height: 24px; padding: 8px; background: #eff6ff; border-radius: 8px; border: 1px dashed #bfdbfe; display: none;"></div>
+          `,
+          showCancelButton: true, confirmButtonColor: '#16a34a', cancelButtonColor: '#64748b', confirmButtonText: '💾 Tambahkan Baris', cancelButtonText: 'Batal', width: '95%', customClass: { popup: 'rounded-4' },
+          preConfirm: () => {
+            const midVal = document.getElementById('new_mid_input').value.trim();
+            if (!midVal) { Swal.showValidationMessage('⚠️ Angka Product wajib diisi!'); return false; }
+            if (midVal && !masterDataMids[midVal]) { Swal.showValidationMessage('⚠️ Angka Product tidak ditemukan di Master Data!'); return false; }
+            return { isKosong: false, mid: midVal, emptyRows: [], actionMode: 'append' }; 
+          }
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+             Swal.fire({ title: 'Menambahkan Baris Baru...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+             const addRes = await sendRequest({ action: 'addNewBin', bin: bin, mid: result.value.mid, isEmpty: false, emptyRows: [], actionMode: 'append' });
+             if(addRes.status === 'success') { updateTaskBoard(addRes.stats); Swal.fire({ icon: 'success', title: 'Berhasil!', html: addRes.message, confirmButtonColor: '#16a34a' }); document.getElementById('binCode').value = ''; } 
+             else { Swal.fire('Gagal', addRes.message, 'error'); }
+          }
+        });
+      }
+
+      function toggleEditPanel(idx, act) {
+         document.getElementById(`edit_panel_${idx}`).style.display = (act === 'edit' || act === 'empty' || act === 'match') ? 'block' : 'none';
+         if (act === 'edit') { document.getElementById(`new_mid_container_${idx}`).style.display = 'block'; liveLookupCard(idx); } 
+         else { document.getElementById(`new_mid_container_${idx}`).style.display = 'none'; }
+      }
+
+      function liveLookupCard(idx) {
+          const val = document.getElementById(`new_mid_${idx}`).value.trim(), disp = document.getElementById(`live_name_${idx}`);
+          if (!val) { disp.style.display = 'none'; return; }
+          disp.style.display = 'block'; disp.innerHTML = masterDataMids[val] ? `✅ ${masterDataMids[val]}` : `❌ Product Tidak terdaftar!`;
+          disp.className = masterDataMids[val] ? 'text-success fw-bold mb-2' : 'text-danger fw-bold mb-2';
+      }
+
+      function liveLookupAdd() {
+          const val = document.getElementById(`add_mid`).value.trim(), disp = document.getElementById(`add_name`);
+          if (!val) { disp.style.display = 'none'; return; }
+          disp.style.display = 'block'; disp.innerHTML = masterDataMids[val] ? `✅ ${masterDataMids[val]}` : `❌ Product Tidak terdaftar!`;
+          disp.className = masterDataMids[val] ? 'text-success fw-bold mb-2' : 'text-danger fw-bold mb-2';
+      }
+      
+      function liveLookupMID() {
+        const inputVal = document.getElementById('new_mid_input').value.trim(), displayDiv = document.getElementById('live_product_name');
+        if (!inputVal) { displayDiv.style.display = 'none'; displayDiv.innerHTML = ''; return; }
+        displayDiv.style.display = 'block';
+        if (masterDataMids[inputVal]) {
+          displayDiv.innerHTML = '✅ ' + masterDataMids[inputVal]; displayDiv.style.color = '#15803d'; displayDiv.style.background = '#f0fdf4'; displayDiv.style.borderColor = '#bbf7d0';
+        } else {
+          displayDiv.innerHTML = '❌ Product tidak ditemukan!'; displayDiv.style.color = '#b91c1c'; displayDiv.style.background = '#fef2f2'; displayDiv.style.borderColor = '#fecaca';
+        }
+      }
+
+      // FUNGSI UNTUK KEMBALI KE MENU UTAMA
+      function backToMenu() {
+        document.getElementById('mainAppContent').style.display = 'none';
+        document.getElementById('modeSelectionScreen').style.display = 'flex';
+      }
+    </script>
+  </body>
+</html>
