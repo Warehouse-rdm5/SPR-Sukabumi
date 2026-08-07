@@ -115,8 +115,8 @@
           </div>
         </div>
 
-        <div class="task-card" id="reverseBinPanel">
-          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres Reverse Bin</h6>
+        <div class="task-card" id="reserveBinPanel">
+          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres reserve Bin</h6>
           <div class="row text-center mb-4">
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sisa Target</small><div class="task-num text-primary" style="font-size:1.05rem;" id="rbTotal">-</div></div>
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Selesai</small><div class="task-num text-success" style="font-size:1.05rem;" id="rbDone">-</div></div>
@@ -175,7 +175,7 @@
         
         // Elemen yang akan kita manipulasi
         const binInput = document.getElementById('binCode');
-        const reversePanel = document.getElementById('reverseBinPanel');
+        const reservePanel = document.getElementById('reserveBinPanel');
         
         if (mode === 'ECERAN') {
            headerTitle.innerText = '🛒 WMS Bin Eceran';
@@ -184,8 +184,8 @@
            // 1. Ubah contoh teks pencarian untuk Eceran
            binInput.placeholder = 'Contoh: RA-01-01-01';
            
-           // 2. Sembunyikan panel Reverse Bin untuk Eceran
-           if(reversePanel) reversePanel.style.display = 'none'; 
+           // 2. Sembunyikan panel reserve Bin untuk Eceran
+           if(reservePanel) reservePanel.style.display = 'none'; 
            
         } else {
            headerTitle.innerText = '📦 WMS Bin SPR';
@@ -194,8 +194,8 @@
            // 1. Ubah contoh teks pencarian untuk SPR
            binInput.placeholder = 'Contoh: AB-02-04';
            
-           // 2. Tampilkan kembali panel Reverse Bin untuk SPR
-           if(reversePanel) reversePanel.style.display = 'block'; 
+           // 2. Tampilkan kembali panel reserve Bin untuk SPR
+           if(reservePanel) reservePanel.style.display = 'block'; 
         }
         
         fetchInitialData();
@@ -247,20 +247,20 @@
         let psKosongHTML = ''; data.pickSlot.listEmpty.forEach(x => { psKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('psTableKosong').innerHTML = psKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
 
-        document.getElementById('rbTotal').innerText = data.reverseBin.belum; 
-        document.getElementById('rbDone').innerText = data.reverseBin.match;
-        document.getElementById('rbPctMatch').innerText = data.reverseBin.pctMatch + '%'; 
-        document.getElementById('rbPctBelum').innerText = data.reverseBin.pctBelum + '%';
-        document.getElementById('rbKosong').innerText = data.reverseBin.kosong; 
-        document.getElementById('rbPctKosong').innerText = data.reverseBin.pctKosong + '%'; // TAMBAHAN %
+        document.getElementById('rbTotal').innerText = data.reserveBin.belum; 
+        document.getElementById('rbDone').innerText = data.reserveBin.match;
+        document.getElementById('rbPctMatch').innerText = data.reserveBin.pctMatch + '%'; 
+        document.getElementById('rbPctBelum').innerText = data.reserveBin.pctBelum + '%';
+        document.getElementById('rbKosong').innerText = data.reserveBin.kosong; 
+        document.getElementById('rbPctKosong').innerText = data.reserveBin.pctKosong + '%'; // TAMBAHAN %
 
-        let rbBelumHTML = ''; data.reverseBin.listBelum.forEach(x => { rbBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
+        let rbBelumHTML = ''; data.reserveBin.listBelum.forEach(x => { rbBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
         document.getElementById('rbTableBelum').innerHTML = rbBelumHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Semua sudah divalidasi</td></tr>';
 
-        let rbNotMatchHTML = ''; data.reverseBin.listNotMatch.forEach(x => { rbNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
+        let rbNotMatchHTML = ''; data.reserveBin.listNotMatch.forEach(x => { rbNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('rbTableNotMatch').innerHTML = rbNotMatchHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Tidak ada Not Match</td></tr>';
 
-        let rbKosongHTML = ''; data.reverseBin.listEmpty.forEach(x => { rbKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
+        let rbKosongHTML = ''; data.reserveBin.listEmpty.forEach(x => { rbKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('rbTableKosong').innerHTML = rbKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
       }
 
@@ -317,7 +317,7 @@
              if(response.summary.empty.length > 0) { htmlSummary += `<div style="font-weight: 900; color: #b45309; font-size: 0.85rem; margin-bottom: 8px; margin-top: 15px;">📭 ITEM KOSONG</div>`; response.summary.empty.forEach(item => htmlSummary += createScannedCard(item, '#eab308', '👻')); }
              htmlSummary += `</div>`;
              
-             Swal.fire({ title: `<span style="font-weight: 900;">Bin <b style="color: #b71c1c;">${response.bin}</b><br>Sudah Diaudit!</span>`, html: htmlSummary, showCancelButton: true, showConfirmButton: true, confirmButtonText: '🔄 Update MID Baru', cancelButtonText: 'Tutup', confirmButtonColor: '#3b82f6', cancelButtonColor: '#64748b', reverseButtons: true, width: '95%' 
+             Swal.fire({ title: `<span style="font-weight: 900;">Bin <b style="color: #b71c1c;">${response.bin}</b><br>Sudah Diaudit!</span>`, html: htmlSummary, showCancelButton: true, showConfirmButton: true, confirmButtonText: '🔄 Update MID Baru', cancelButtonText: 'Tutup', confirmButtonColor: '#3b82f6', cancelButtonColor: '#64748b', reserveButtons: true, width: '95%' 
              }).then((result) => {
                if (result.isConfirmed) { setTimeout(() => { showInputMidPopup(response.bin, response.products); }, 350); } else { document.getElementById('binCode').value = ''; }
              });
