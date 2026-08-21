@@ -12,7 +12,6 @@
       html, body { max-width: 100vw; overflow-x: hidden; }
       body { background-color: #f0f2f5; font-family: 'Plus Jakarta Sans', sans-serif; color: #333; padding-bottom: 30px; touch-action: manipulation; }
       
-      /* STYLING MODE SELECTION */
       #modeSelectionScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e2e8f0; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
       .mode-card { background: white; padding: 30px 20px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border-top: 8px solid #d32f2f; }
       .btn-mode { padding: 18px; font-size: 1.15rem; font-weight: 800; border-radius: 14px; width: 100%; border: none; transition: transform 0.2s; }
@@ -38,9 +37,11 @@
       .custom-radio-btn:checked + .label-notmatch { background-color: #ef4444; border-color: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
       .custom-radio-btn:checked + .label-empty { background-color: #f59e0b; border-color: #f59e0b; color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
 
-      /* Styling khusus untuk tombol alternatif jepret foto */
       #reader button { padding: 10px 20px; background-color: #d32f2f; color: white; border: none; border-radius: 8px; font-weight: bold; margin: 10px 5px; cursor: pointer; }
       #reader a { color: #d32f2f; font-weight: bold; text-decoration: none; margin-top: 10px; display: inline-block; }
+      
+      .clickable-row { cursor: pointer; transition: all 0.2s ease; }
+      .clickable-row:hover { background-color: #f1f5f9 !important; transform: scale(1.01); }
     </style>
   </head>
   <body>
@@ -48,6 +49,7 @@
     <div id="modeSelectionScreen">
       <div class="mode-card">
         <h2 class="fw-bold mb-1" style="color: #1e293b;">Area Audit</h2>
+        <!-- Ganti nama DC di bawah ini jika menduplikat untuk cabang lain -->
         <p class="text-muted mb-4" style="font-size: 0.9rem; font-weight: 600;">DC Sukabumi</p>
         <button class="btn-mode btn-spr" onclick="selectMode('SPR')">📦 Check Bin SPR</button>
         <button class="btn-mode btn-eceran" onclick="selectMode('ECERAN')">🛒 Check Bin ECERAN</button>
@@ -58,17 +60,19 @@
       <div class="header-wings" id="dynamicHeader">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h3 class="m-0 fw-bold text-start" id="headerTitle">📦 WMS Bin Checker DC Sukabumi</h3>
+            <h3 class="m-0 fw-bold text-start" id="headerTitle">📦 WMS Bin Checker</h3>
             <small style="opacity: 0.85;" class="text-start d-block">Live Scanner DC</small>
           </div>
           <div>
-            <button type="button" class="btn btn-sm btn-warning fw-bold text-dark me-1" onclick="backToMenu()" style="border-radius: 20px; padding: 5px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🏠 Menu</button>
+            <button type="button" class="btn btn-sm btn-info fw-bold text-dark me-1" onclick="sendAccuracyReport()" style="border-radius: 20px; padding: 5px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">📤 Kirim Akurasi</button>
             <button type="button" class="btn btn-sm btn-light fw-bold text-dark" onclick="fetchInitialData()" style="border-radius: 20px; padding: 5px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔄 Refresh</button>
           </div>
         </div>
       </div>
 
       <div class="container pb-4">
+        <button type="button" class="btn btn-sm btn-outline-secondary fw-bold mb-3 w-100" onclick="backToMenu()" style="border-radius: 10px; padding: 10px;">🏠 Ganti Mode / Menu Awal</button>
+
         <div class="card card-main">
           <form id="scanForm" onsubmit="handleFormSubmit(event)">
             <datalist id="binList"></datalist>
@@ -89,44 +93,38 @@
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sisa Target</small><div class="task-num text-primary" style="font-size:1.05rem;" id="psTotal">-</div></div>
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Selesai</small><div class="task-num text-success" style="font-size:1.05rem;" id="psDone">-</div></div>
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sesuai%</small><div class="task-num text-danger" style="font-size:1.05rem;" id="psPctMatch">-%</div></div>
-            <!-- UPDATE PERSENTASE KOSONG -->
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Kosong</small><div class="task-num text-warning text-dark" style="font-size:1.05rem;" id="psKosong">-</div><div style="font-size:0.65rem; font-weight:700; color:#d97706;" id="psPctKosong">-%</div></div>
-            <!-- UPDATE KATA BELUM VALIDASI -->
             <div class="col px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Belum Validasi</small><div class="task-num text-secondary" style="font-size:1.05rem;" id="psPctBelum">-%</div></div>
           </div>
-          <!-- (Sisa tabel Belum, Not Match, Kosong biarkan sama) -->
           <div class="mt-2 text-start">
              <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">⚠️</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b45309; text-transform: uppercase;">Daftar Belum Validasi</h6></div>
-             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableBelum"></tbody></table>
              </div>
           </div>
           <div class="mt-4 text-start">
              <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">❌</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b91c1c; text-transform: uppercase;">Daftar Not Match</h6></div>
-             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableNotMatch"></tbody></table>
              </div>
           </div>
           <div class="mt-4 text-start">
              <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">📭</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #d97706; text-transform: uppercase;">Daftar Item Kosong</h6></div>
-             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+             <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.75rem;"><thead style="position: sticky; top: 0; z-index: 1;"><tr class="text-secondary" style="font-size: 0.7rem; background-color: #f8fafc;"><th style="padding-left: 12px; background-color: #f8fafc;">Storage Bin</th><th style="background-color: #f8fafc;">Product</th><th style="background-color: #f8fafc;">MID</th></tr></thead><tbody id="psTableKosong"></tbody></table>
              </div>
           </div>
         </div>
 
         <div class="task-card" id="reserveBinPanel">
-          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres reserve Bin</h6>
+          <h6 class="fw-bold text-secondary text-uppercase mb-3" style="font-size:0.75rem; letter-spacing:0.6px;">📋 Progres Reserve Bin</h6>
           <div class="row text-center mb-4">
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sisa Target</small><div class="task-num text-primary" style="font-size:1.05rem;" id="rbTotal">-</div></div>
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Selesai</small><div class="task-num text-success" style="font-size:1.05rem;" id="rbDone">-</div></div>
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Sesuai%</small><div class="task-num text-danger" style="font-size:1.05rem;" id="rbPctMatch">-%</div></div>
-            <!-- UPDATE PERSENTASE KOSONG -->
             <div class="col border-end px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Kosong</small><div class="task-num text-warning text-dark" style="font-size:1.05rem;" id="rbKosong">-</div><div style="font-size:0.65rem; font-weight:700; color:#d97706;" id="rbPctKosong">-%</div></div>
-            <!-- UPDATE KATA BELUM VALIDASI -->
             <div class="col px-1"><small class="text-secondary fw-bold" style="font-size:0.6rem;">Belum Validasi</small><div class="task-num text-secondary" style="font-size:1.05rem;" id="rbPctBelum">-%</div></div>
           </div>
-          <!-- (Sisa tabel Belum, Not Match, Kosong biarkan sama) -->
           <div class="mt-2 text-start">
              <div class="d-flex align-items-center mb-2"><span style="font-size: 1.1rem; margin-right: 6px;">⚠️</span><h6 class="fw-bold m-0" style="font-size: 0.8rem; color: #b45309; text-transform: uppercase;">Daftar Belum Validasi</h6></div>
              <div class="table-responsive" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -158,12 +156,19 @@
     </div>
 
     <script>
+      // ==========================================
+      // PASTIKAN API_URL INI SESUAI DENGAN DEPLOY TERBARU ANDA!
+      // ==========================================
       const API_URL = "https://script.google.com/macros/s/AKfycbztAejE1_7Ktj4rW1QRzsm4leIfRJRWd7tB7hk0NIhi7V8krITmK7ZcQa_PjzfmevJk/exec"; 
+      
       let html5QrCode, scanModal, masterDataMids = {};
-      let appMode = 'SPR'; // Default Mode
+      let appMode = 'SPR';
+      
+      // Ganti nama DC di bawah ini jika menduplikat untuk cabang lain
+      const targetDCName = 'STA Sukabumi'; 
 
-      document.addEventListener("DOMContentLoaded", function() {
-      });
+      // Variabel penyimpan angka mutlak
+      let currentAccuracyValue = "0.00";
 
       function selectMode(mode) {
         appMode = mode;
@@ -173,28 +178,18 @@
         const headerTitle = document.getElementById('headerTitle');
         const headerBg = document.getElementById('dynamicHeader');
         
-        // Elemen yang akan kita manipulasi
         const binInput = document.getElementById('binCode');
         const reservePanel = document.getElementById('reserveBinPanel');
         
         if (mode === 'ECERAN') {
-           headerTitle.innerText = '🛒 WMS Bin Eceran';
+           headerTitle.innerText = `🛒 WMS Bin Eceran ${targetDCName.replace('STA ', 'DC ')}`;
            headerBg.style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
-           
-           // 1. Ubah contoh teks pencarian untuk Eceran
            binInput.placeholder = 'Contoh: RA-01-01-01';
-           
-           // 2. Sembunyikan panel reserve Bin untuk Eceran
            if(reservePanel) reservePanel.style.display = 'none'; 
-           
         } else {
-           headerTitle.innerText = '📦 WMS Bin SPR';
+           headerTitle.innerText = `📦 WMS Bin SPR ${targetDCName.replace('STA ', 'DC ')}`;
            headerBg.style.background = 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)';
-           
-           // 1. Ubah contoh teks pencarian untuk SPR
            binInput.placeholder = 'Contoh: AB-02-04';
-           
-           // 2. Tampilkan kembali panel reserve Bin untuk SPR
            if(reservePanel) reservePanel.style.display = 'block'; 
         }
         
@@ -207,44 +202,111 @@
         return await res.json();
       }
 
+      // ==========================================
+      // FUNGSI SUNTIK AKURASI (100% SAMA DENGAN UI)
+      // ==========================================
+      function sendAccuracyReport() {
+        let pctText = currentAccuracyValue;
+        let accuracyValue = parseFloat(pctText) / 100;
+
+        if (isNaN(accuracyValue) || pctText === "0.00" || pctText === "-") {
+            Swal.fire('Data Kosong', 'Belum ada data akurasi untuk dikirim.', 'warning');
+            return;
+        }
+
+        Swal.fire({
+           title: 'Kirim Laporan Akurasi?',
+           text: `Suntikkan akurasi ${pctText}% untuk area ${appMode} ke Spreadsheet Pusat (Target: ${targetDCName})?`,
+           icon: 'info',
+           showCancelButton: true,
+           confirmButtonText: '🚀 Ya, Kirim Data',
+           cancelButtonText: 'Batal',
+           confirmButtonColor: '#2563eb'
+        }).then(async (result) => {
+           if(result.isConfirmed) {
+              Swal.fire({ title: 'Menghubungi Server...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+              try {
+                 const res = await sendRequest({ action: 'sendAccuracy', accuracyVal: accuracyValue, targetDC: targetDCName });
+                 if(res.status === 'success') {
+                     Swal.fire('Berhasil Terkirim!', res.message, 'success');
+                 } else {
+                     Swal.fire('Gagal!', res.message, 'error');
+                 }
+              } catch(e) {
+                 Swal.fire('Error Network', 'Gagal memproses data. Coba beberapa saat lagi.', 'error');
+              }
+           }
+        });
+      }
+
       async function fetchInitialData() {
         const btn = document.getElementById('btnSubmit');
         btn.disabled = true; btn.innerHTML = '⏳ Menarik Data ' + appMode + '...';
         try {
           const data = await sendRequest({ action: 'init' });
           if(data.status === 'success') {
-            const binList = document.getElementById('binList'); binList.innerHTML = '';
-            data.bins.forEach(b => { let opt = document.createElement('option'); opt.value = b; binList.appendChild(opt); });
+            
+            const binList = document.getElementById('binList'); 
+            binList.innerHTML = '';
+            data.bins.forEach(b => { 
+                let opt = document.createElement('option'); 
+                opt.value = b; 
+                binList.appendChild(opt); 
+            });
+
             updateTaskBoard(data);
-            masterDataMids = data.masterMids || {}; 
             btn.disabled = false; btn.innerHTML = '🔍 Cek Bin Ini';
+            
+            fetchMasterMidsSilent();
+            
           } else {
             Swal.fire('Error Database', data.message || 'Gagal terhubung ke Google Sheet.', 'error');
             btn.disabled = false; btn.innerHTML = '⚠️ Coba Lagi';
           }
         } catch (e) { 
-            Swal.fire('Offline', 'Koneksi internet bermasalah.', 'warning');
+            Swal.fire('Offline', 'Koneksi internet bermasalah. Server sibuk.', 'warning');
             btn.disabled = false; btn.innerHTML = '🔍 Cek Bin Ini (Offline)'; 
         }
+      }
+
+      async function fetchMasterMidsSilent() {
+        try {
+            const res = await sendRequest({ action: 'getMaster' });
+            if(res.status === 'success') {
+                masterDataMids = res.masterMids || {};
+            }
+        } catch (e) {
+            console.log("Gagal menarik master data di jalur belakang", e);
+        }
+      }
+
+      function quickCheckBin(binStr) {
+          document.getElementById('binCode').value = binStr;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          handleFormSubmit(null);
       }
 
       function updateTaskBoard(data) {
         if (!data.pickSlot) return; 
 
+        // RUMUS TRUE ACCURACY DIKUNCI HANYA KE PICK SLOT SAJA (Sesuai Permintaan)
+        currentAccuracyValue = data.pickSlot.pctMatch;
+
+        // Render Angka ke HTML
         document.getElementById('psTotal').innerText = data.pickSlot.belum; 
         document.getElementById('psDone').innerText = data.pickSlot.match;
         document.getElementById('psPctMatch').innerText = data.pickSlot.pctMatch + '%'; 
         document.getElementById('psPctBelum').innerText = data.pickSlot.pctBelum + '%';
         document.getElementById('psKosong').innerText = data.pickSlot.kosong; 
-        document.getElementById('psPctKosong').innerText = data.pickSlot.pctKosong + '%'; // TAMBAHAN %
+        document.getElementById('psPctKosong').innerText = data.pickSlot.pctKosong + '%';
 
-        let psBelumHTML = ''; data.pickSlot.listBelum.forEach(x => { psBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
+        let psBelumHTML = ''; data.pickSlot.listBelum.forEach(x => { psBelumHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Audit Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
         document.getElementById('psTableBelum').innerHTML = psBelumHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Semua sudah divalidasi</td></tr>';
 
-        let psNotMatchHTML = ''; data.pickSlot.listNotMatch.forEach(x => { psNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
+        let psNotMatchHTML = ''; data.pickSlot.listNotMatch.forEach(x => { psNotMatchHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Maintain / Update Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('psTableNotMatch').innerHTML = psNotMatchHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Tidak ada Not Match</td></tr>';
 
-        let psKosongHTML = ''; data.pickSlot.listEmpty.forEach(x => { psKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
+        let psKosongHTML = ''; data.pickSlot.listEmpty.forEach(x => { psKosongHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Maintain / Update Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('psTableKosong').innerHTML = psKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
 
         document.getElementById('rbTotal').innerText = data.reserveBin.belum; 
@@ -252,38 +314,28 @@
         document.getElementById('rbPctMatch').innerText = data.reserveBin.pctMatch + '%'; 
         document.getElementById('rbPctBelum').innerText = data.reserveBin.pctBelum + '%';
         document.getElementById('rbKosong').innerText = data.reserveBin.kosong; 
-        document.getElementById('rbPctKosong').innerText = data.reserveBin.pctKosong + '%'; // TAMBAHAN %
+        document.getElementById('rbPctKosong').innerText = data.reserveBin.pctKosong + '%';
 
-        let rbBelumHTML = ''; data.reserveBin.listBelum.forEach(x => { rbBelumHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
+        let rbBelumHTML = ''; data.reserveBin.listBelum.forEach(x => { rbBelumHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Audit Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-muted">${x.mid}</td></tr>`; });
         document.getElementById('rbTableBelum').innerHTML = rbBelumHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Semua sudah divalidasi</td></tr>';
 
-        let rbNotMatchHTML = ''; data.reserveBin.listNotMatch.forEach(x => { rbNotMatchHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
+        let rbNotMatchHTML = ''; data.reserveBin.listNotMatch.forEach(x => { rbNotMatchHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Maintain / Update Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-danger fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('rbTableNotMatch').innerHTML = rbNotMatchHTML || '<tr><td colspan="3" class="text-center text-success fw-bold py-3">🎉 Tidak ada Not Match</td></tr>';
 
-        let rbKosongHTML = ''; data.reserveBin.listEmpty.forEach(x => { rbKosongHTML += `<tr><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
+        let rbKosongHTML = ''; data.reserveBin.listEmpty.forEach(x => { rbKosongHTML += `<tr class="clickable-row" onclick="quickCheckBin('${x.bin}')" title="Klik untuk Maintain / Update Bin ini"><td style="white-space: nowrap; padding-left: 12px;"><b style="color: #334155;">${x.bin}</b></td><td>${x.product}</td><td class="text-warning text-dark fw-bold">${x.mid}</td></tr>`; });
         document.getElementById('rbTableKosong').innerHTML = rbKosongHTML || '<tr><td colspan="3" class="text-center text-muted fw-bold py-3">🎉 Tidak ada Item Kosong</td></tr>';
       }
 
-      // ==========================================================
-      // FITUR SCANNER FINAL (DILENGKAPI TOMBOL JEPRET FOTO ALTERNATIF)
-      // ==========================================================
-      let html5QrcodeScanner; // Gunakan variabel versi Scanner UI
+      let html5QrcodeScanner;
 
       function openScanner() {
-        // 1. Tampilkan layar hitam overlay
         document.getElementById('scannerOverlay').style.display = 'flex';
-
-        // 2. Gunakan Html5QrcodeScanner (Versi UI Lengkap)
         html5QrcodeScanner = new Html5QrcodeScanner(
           "reader",
           { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true },
-          false // verbose = false
+          false
         );
-
-        // 3. Render scanner ke layar
-        html5QrcodeScanner.render(onScanSuccess, function(errorMessage) {
-            // Biarkan kosong agar console tidak dipenuhi error pencarian frame
-        });
+        html5QrcodeScanner.render(onScanSuccess, function(errorMessage) { });
       }
 
       function onScanSuccess(decodedText, decodedResult) {
@@ -322,8 +374,12 @@
                if (result.isConfirmed) { setTimeout(() => { showInputMidPopup(response.bin, response.products); }, 350); } else { document.getElementById('binCode').value = ''; }
              });
           } 
-          else if (response.status === 'bin_not_found_030405') { showInputMidPopup(response.bin, null); }
+          else if (response.status === 'bin_not_found_stock') { showInputMidPopup(response.bin, null); }
           else if (response.type === 'POPUP_LIST') { showAuditListPopup(binVal, response.products, response.suffix); } 
+          else if (response.status === 'not_found') {
+             Swal.fire({ icon: 'info', title: response.title, html: response.message, confirmButtonColor: '#3b82f6' });
+             document.getElementById('binCode').value = '';
+          }
           else { Swal.fire('Error!', response.message, 'error'); }
         } catch (error) { Swal.fire('Error', 'Gagal terhubung ke Database.', 'error'); } 
         finally { btn.innerHTML = '🔍 Cek Bin Ini'; btn.disabled = false; }
@@ -409,8 +465,18 @@
         }).then(async (result) => {
           if (result.isConfirmed) {
              Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-             const saveRes = await sendRequest({ action: 'submitBinAudit', bin: bin, auditData: result.value });
-             if(saveRes.status === 'success') { updateTaskBoard(saveRes.stats); Swal.fire('Tersimpan!', saveRes.message, 'success'); document.getElementById('binCode').value = ''; } else { Swal.fire('Gagal', saveRes.message, 'error'); }
+             try {
+                 const saveRes = await sendRequest({ action: 'submitBinAudit', bin: bin, auditData: result.value });
+                 if(saveRes.status === 'success') { 
+                     updateTaskBoard(saveRes.stats); 
+                     Swal.fire('Tersimpan!', saveRes.message, 'success'); 
+                     document.getElementById('binCode').value = ''; 
+                 } else { 
+                     Swal.fire('Gagal', saveRes.message, 'error'); 
+                 }
+             } catch(err) {
+                 Swal.fire('Error Server', 'Terjadi kesalahan jaringan, silakan muat ulang (refresh) halaman.', 'error');
+             }
           }
         });
       }
@@ -480,8 +546,10 @@
                 let row = document.getElementById(`row_${i}`).value;
                 let newMid = action === 'edit' ? document.getElementById(`new_mid_${i}`).value.trim() : '';
                 let qty = (action === 'edit' || action === 'empty' || action === 'match') ? document.getElementById(`qty_${i}`).value.trim() : '';
+                
                 if (action === 'edit' && !newMid) { Swal.showValidationMessage('⚠️ MID Baru wajib diisi jika pilih Ganti MID!'); return false; }
-                if (action === 'edit' && newMid && !masterDataMids[newMid]) { Swal.showValidationMessage(`⚠️ MID ${newMid} tidak terdaftar!`); return false; }
+                if (action === 'edit' && newMid && Object.keys(masterDataMids).length > 0 && !masterDataMids[newMid]) { Swal.showValidationMessage(`⚠️ MID ${newMid} tidak terdaftar!`); return false; }
+                
                 updates.push({ row: row, action: action, newMid: newMid, qty: qty, oldProd: products[i].product, oldMid: products[i].mid });
               }
             }
@@ -489,7 +557,7 @@
             let addQty = document.getElementById('add_qty') ? document.getElementById('add_qty').value.trim() : '';
             let addData = null;
             if (addMid) {
-               if (!masterDataMids[addMid]) { Swal.showValidationMessage(`⚠️ MID Baru ${addMid} tidak terdaftar!`); return false; }
+               if (Object.keys(masterDataMids).length > 0 && !masterDataMids[addMid]) { Swal.showValidationMessage(`⚠️ MID Baru ${addMid} tidak terdaftar!`); return false; }
                addData = { newMid: addMid, qty: addQty };
             }
             return { updates: updates, addData: addData };
@@ -497,9 +565,18 @@
         }).then(async (result) => {
            if (result.isConfirmed) {
               Swal.fire({ title: 'Memproses Data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-              const res = await sendRequest({ action: 'processMaintainBin', bin: bin, maintainData: result.value });
-              if(res.status === 'success') { updateTaskBoard(res.stats); Swal.fire({ icon: 'success', title: 'Berhasil!', html: res.message, confirmButtonColor: '#16a34a' }); document.getElementById('binCode').value = ''; }
-              else { Swal.fire('Gagal', res.message, 'error'); }
+              try {
+                  const res = await sendRequest({ action: 'processMaintainBin', bin: bin, maintainData: result.value });
+                  if(res.status === 'success') { 
+                      updateTaskBoard(res.stats); 
+                      Swal.fire({ icon: 'success', title: 'Berhasil!', html: res.message, confirmButtonColor: '#16a34a' }); 
+                      document.getElementById('binCode').value = ''; 
+                  } else { 
+                      Swal.fire('Gagal', res.message, 'error'); 
+                  }
+              } catch(err) {
+                  Swal.fire('Error Server', 'Terjadi kesalahan jaringan, silakan muat ulang (refresh) halaman.', 'error');
+              }
            } else { document.getElementById('binCode').value = ''; }
         });
       }
@@ -519,15 +596,24 @@
           preConfirm: () => {
             const midVal = document.getElementById('new_mid_input').value.trim();
             if (!midVal) { Swal.showValidationMessage('⚠️ Angka Product wajib diisi!'); return false; }
-            if (midVal && !masterDataMids[midVal]) { Swal.showValidationMessage('⚠️ Angka Product tidak ditemukan di Master Data!'); return false; }
+            if (midVal && Object.keys(masterDataMids).length > 0 && !masterDataMids[midVal]) { Swal.showValidationMessage('⚠️ Angka Product tidak ditemukan di Master Data!'); return false; }
             return { isKosong: false, mid: midVal, emptyRows: [], actionMode: 'append' }; 
           }
         }).then(async (result) => {
           if (result.isConfirmed) {
              Swal.fire({ title: 'Menambahkan Baris Baru...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-             const addRes = await sendRequest({ action: 'addNewBin', bin: bin, mid: result.value.mid, isEmpty: false, emptyRows: [], actionMode: 'append' });
-             if(addRes.status === 'success') { updateTaskBoard(addRes.stats); Swal.fire({ icon: 'success', title: 'Berhasil!', html: addRes.message, confirmButtonColor: '#16a34a' }); document.getElementById('binCode').value = ''; } 
-             else { Swal.fire('Gagal', addRes.message, 'error'); }
+             try {
+                 const addRes = await sendRequest({ action: 'addNewBin', bin: bin, mid: result.value.mid, isEmpty: false, emptyRows: [], actionMode: 'append' });
+                 if(addRes.status === 'success') { 
+                     updateTaskBoard(addRes.stats); 
+                     Swal.fire({ icon: 'success', title: 'Berhasil!', html: addRes.message, confirmButtonColor: '#16a34a' }); 
+                     document.getElementById('binCode').value = ''; 
+                 } else { 
+                     Swal.fire('Gagal', addRes.message, 'error'); 
+                 }
+             } catch(err) {
+                 Swal.fire('Error Server', 'Terjadi kesalahan jaringan, silakan muat ulang (refresh) halaman.', 'error');
+             }
           }
         });
       }
@@ -541,6 +627,11 @@
       function liveLookupCard(idx) {
           const val = document.getElementById(`new_mid_${idx}`).value.trim(), disp = document.getElementById(`live_name_${idx}`);
           if (!val) { disp.style.display = 'none'; return; }
+          
+          if(Object.keys(masterDataMids).length === 0) {
+             disp.style.display = 'block'; disp.innerHTML = `⏳ Menunggu Master Data...`; disp.className = 'text-warning fw-bold mb-2'; return;
+          }
+          
           disp.style.display = 'block'; disp.innerHTML = masterDataMids[val] ? `✅ ${masterDataMids[val]}` : `❌ Product Tidak terdaftar!`;
           disp.className = masterDataMids[val] ? 'text-success fw-bold mb-2' : 'text-danger fw-bold mb-2';
       }
@@ -548,6 +639,9 @@
       function liveLookupAdd() {
           const val = document.getElementById(`add_mid`).value.trim(), disp = document.getElementById(`add_name`);
           if (!val) { disp.style.display = 'none'; return; }
+          
+          if(Object.keys(masterDataMids).length === 0) return;
+          
           disp.style.display = 'block'; disp.innerHTML = masterDataMids[val] ? `✅ ${masterDataMids[val]}` : `❌ Product Tidak terdaftar!`;
           disp.className = masterDataMids[val] ? 'text-success fw-bold mb-2' : 'text-danger fw-bold mb-2';
       }
@@ -556,6 +650,9 @@
         const inputVal = document.getElementById('new_mid_input').value.trim(), displayDiv = document.getElementById('live_product_name');
         if (!inputVal) { displayDiv.style.display = 'none'; displayDiv.innerHTML = ''; return; }
         displayDiv.style.display = 'block';
+        
+        if(Object.keys(masterDataMids).length === 0) return;
+        
         if (masterDataMids[inputVal]) {
           displayDiv.innerHTML = '✅ ' + masterDataMids[inputVal]; displayDiv.style.color = '#15803d'; displayDiv.style.background = '#f0fdf4'; displayDiv.style.borderColor = '#bbf7d0';
         } else {
@@ -563,7 +660,6 @@
         }
       }
 
-      // FUNGSI UNTUK KEMBALI KE MENU UTAMA
       function backToMenu() {
         document.getElementById('mainAppContent').style.display = 'none';
         document.getElementById('modeSelectionScreen').style.display = 'flex';
